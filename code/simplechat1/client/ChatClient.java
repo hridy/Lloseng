@@ -3,9 +3,10 @@
 // license found at www.lloseng.com 
 
 package client;
-
-import ocsf.client.*;
 import common.*;
+import ocsf.client.*;
+import ocsf.server.ConnectionToClient;
+
 import java.io.*;
 
 /**
@@ -27,23 +28,24 @@ public class ChatClient extends AbstractClient
    */
   ChatIF clientUI; 
 
-  
   //Constructors ****************************************************
   
   /**
    * Constructs an instance of the chat client.
    *
+   * @param clientID The ID of the chat client
    * @param host The server to connect to.
    * @param port The port number to connect on.
    * @param clientUI The interface type variable.
    */
   
-  public ChatClient(String host, int port, ChatIF clientUI) 
+  public ChatClient(String clientID, String host, int port, ChatIF clientUI) 
     throws IOException 
   {
     super(host, port); //Call the superclass constructor
     this.clientUI = clientUI;
     openConnection();
+    sendToServer("#login " + "<" + clientID + ">");
   }
 
   
@@ -66,15 +68,65 @@ public class ChatClient extends AbstractClient
    */
   public void handleMessageFromClientUI(String message)
   {
-    try
-    {
-      sendToServer(message);
+    if (message.startsWith("#")){
+      String[] command = message.split(" ");
+      String input = command[0];
+      switch (input){
+        case "#quit":
+          System.exit(0);
+          break;
+        
+        case "#logoff":
+          try {
+            closeConnection();
+          } 
+          catch (IOException e) { // required to catch the exception as it is thrown in AbstractClient
+            System.out.println("Cannot close client connection, try again." );
+          }
+          break;
+        
+        case "#sethost":
+          if (this.isConnected())
+            System.out.println("#sethost: Client is already connected");
+          else
+            this.setHost(command[1]);
+          break;
+        
+        case "#setport":
+          if (this.isConnected())
+            System.out.println("#setport: Client is already connected");
+          else
+            this.setPort(Integer.parseInt(command[1]));
+          break;
+        
+        case "#login":
+          if (this.isConnected())
+            System.out.println("#login: Client is already connected");
+          else
+            try{
+              this.openConnection();
+            } catch(IOException e){}
+          break;
+
+        case "#gethost":
+            System.out.println("Host: " + this.getHost());
+            break;
+          
+        case "#getport":
+            System.out.println("Port: " + this.getPort());
+            break;
+      }
     }
-    catch(IOException e)
-    {
-      clientUI.display
-        ("Could not send message to server.  Terminating client.");
-      quit();
+    else{
+      try
+      {
+        sendToServer(message);
+      }
+      catch(IOException e)
+      {
+        clientUI.display ("Could not send message to server.  Terminating client.");
+        quit();
+      }
     }
   }
   
@@ -89,6 +141,10 @@ public class ChatClient extends AbstractClient
     }
     catch(IOException e) {}
     System.exit(0);
+  }
+
+  public void connectionClosed(){
+    System.out.println("E5a: Connection to Server lost");
   }
 }
 //End of ChatClient class
