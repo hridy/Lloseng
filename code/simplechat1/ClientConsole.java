@@ -3,8 +3,10 @@
 // license found at www.lloseng.com 
 
 import java.io.*;
+
 import client.*;
 import common.*;
+import java.util.*;
 
 /**
  * This class constructs the UI for a chat client.  It implements the
@@ -16,7 +18,7 @@ import common.*;
  * @author Dr Robert Lagani&egrave;re
  * @version July 2000
  */
-public class ClientConsole implements ChatIF 
+public class ClientConsole implements ChatIF
 {
   //Class variables *************************************************
   
@@ -41,11 +43,11 @@ public class ClientConsole implements ChatIF
    * @param host The host to connect to.
    * @param port The port to connect on.
    */
-  public ClientConsole(String host, int port) 
+  public ClientConsole(String ID, String host, int port) 
   {
     try 
     {
-      client= new ChatClient(host, port, this);
+      client= new ChatClient(ID, host, port, this);
     } 
     catch(IOException exception) 
     {
@@ -102,8 +104,19 @@ public class ClientConsole implements ChatIF
    *
    * @param args[0] The host to connect to.
    */
-  public static void main(String[] args) 
+  public static void main(String[] args)
   {
+    String loginID = "";
+    System.out.print("Enter login ID: ");
+    BufferedReader fromConsole = new BufferedReader(new InputStreamReader(System.in));
+    try{
+     loginID = fromConsole.readLine();
+      if (loginID.isBlank()){
+        System.out.println("ERROR! Must enter login ID. BYE BYE!");
+        System.exit(1);
+      }
+    } catch(IOException e){}
+
     String host = "";
     int port = 0;  //The port number
 
@@ -115,7 +128,16 @@ public class ClientConsole implements ChatIF
     {
       host = "localhost";
     }
-    ClientConsole chat= new ClientConsole(host, DEFAULT_PORT);
+  
+    try{
+      port = Integer.parseInt(args[0]);
+    }
+    catch (ArrayIndexOutOfBoundsException e){
+      port = DEFAULT_PORT;
+    }
+
+    ClientConsole chat = new ClientConsole(loginID, host, port);
+    System.out.println("You are connected to port: " + port);
     chat.accept();  //Wait for console data
   }
 }
